@@ -19,6 +19,10 @@ func (p Palette) String() string {
 	return "colors: " + strings.Join(parts, ", ")
 }
 
+func (p Palette) Unpack() []Color {
+	return p.colors
+}
+
 func MakePalette(colors ...Color) Palette {
 	return Palette{
 		colors: colors,
@@ -86,7 +90,7 @@ func (p *Palette) Shades(n int, strength float64) Palette {
 			}
 		}
 	}
-	
+
 	np := Palette{colors: result}
 	np.SortByHSL(false, false, true)
 
