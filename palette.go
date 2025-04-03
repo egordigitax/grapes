@@ -2,6 +2,7 @@ package grapes
 
 import (
 	"fmt"
+	"image"
 	"math"
 	"sort"
 	"strings"
@@ -23,9 +24,15 @@ func (p Palette) Unpack() []Color {
 	return p.colors
 }
 
-func MakePalette(colors ...Color) Palette {
+func NewPalette(colors ...Color) Palette {
 	return Palette{
 		colors: colors,
+	}
+}
+
+func NewPaletteFromImage(img image.Image, colorsNum int) Palette {
+	return Palette{
+		colors: FromImage(img, colorsNum),
 	}
 }
 

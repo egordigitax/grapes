@@ -1,7 +1,6 @@
 package grapes
 
 import (
-	"errors"
 	"fmt"
 	"image"
 	"math"
@@ -124,14 +123,10 @@ func ColorDistance(c1, c2 Color) float64 {
 	)
 }
 
-func FromImage(img image.Image, numColors int) ([]Color, error) {
-	if numColors <= 0 {
-		return nil, errors.New("numColors must be > 0")
-	}
-
+func FromImage(img image.Image, numColors int) []Color {
 	freq := countColors(img)
 	sorted := sortColorFrequencies(freq)
-	return filterDistinctColors(sorted, numColors), nil
+	return filterDistinctColors(sorted, numColors)
 }
 
 func countColors(img image.Image) map[Color]int {
