@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"image"
 	"math"
-	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -23,11 +21,96 @@ func (c Color) String() string {
 
 func (c Color) ToFloats() [4]float64 {
 	return [4]float64{
-		float64(255 / c.R),
-		float64(255 / c.G),
-		float64(255 / c.B),
-		float64(255 / c.A),
+		float64(c.R) / 255,
+		float64(c.G) / 255,
+		float64(c.B) / 255,
+		float64(c.A) / 255,
 	}
+}
+
+func (c Color) Analogue() [2]Color {
+	h, s, l := c.ToHSL()
+	h1 := math.Mod(h+30, 360)
+	h2 := math.Mod(h-30+360, 360)
+	return [2]Color{
+		FromHSLf(h1, s, l, float64(c.A)/255),
+		FromHSLf(h2, s, l, float64(c.A)/255),
+	}
+}
+
+func (c Color) Complimentary() Color {
+	h, s, l := c.ToHSL()
+	hComp := math.Mod(h+180, 360)
+	return FromHSLf(hComp, s, l, float64(c.A)/255)
+}
+
+func (c Color) Triade() [2]Color {
+	h, s, l := c.ToHSL()
+	h1 := math.Mod(h+120, 360)
+	h2 := math.Mod(h+240, 360)
+	return [2]Color{
+		FromHSLf(h1, s, l, float64(c.A)/255),
+		FromHSLf(h2, s, l, float64(c.A)/255),
+	}
+}
+
+func (c Color) Tetradic() [3]Color {
+	h, s, l := c.ToHSL()
+	h1 := math.Mod(h+90, 360)
+	h2 := math.Mod(h+180, 360)
+	h3 := math.Mod(h+270, 360)
+	return [3]Color{
+		FromHSLf(h1, s, l, float64(c.A)/255),
+		FromHSLf(h2, s, l, float64(c.A)/255),
+		FromHSLf(h3, s, l, float64(c.A)/255),
+	}
+}
+
+func (c Color) AnalogueAccent() [3]Color {
+	h, s, l := c.ToHSL()
+	hAcc := math.Mod(h+180, 360)
+	h1 := math.Mod(hAcc+30, 360)
+	h2 := math.Mod(hAcc-30+360, 360)
+	return [3]Color{
+		FromHSLf(h1, s, l, float64(c.A)/255),
+		FromHSLf(hAcc, s, l, float64(c.A)/255),
+		FromHSLf(h2, s, l, float64(c.A)/255),
+	}
+}
+
+func (c Color) Shades(num int, strength float64) []Color {
+	if num <= 0 {
+		return nil
+	}
+
+	h, s, l0 := c.ToHSL()
+	a := float64(c.A) / 255
+
+	result := make([]Color, 0, num)
+	result = append(result, FromHSLf(h, s, clamp(l0), a))
+
+	if num == 1 {
+		return result
+	}
+
+	steps := num - 1
+	for i := 1; i <= steps; i++ {
+		t := float64(i) / float64(steps)
+		offset := strength * t
+
+		var l float64
+		if i%2 == 1 {
+			l = clamp(l0 + offset) // сначала светлее
+		} else {
+			l = clamp(l0 - offset) // потом темнее
+		}
+
+		result = append(result, FromHSLf(h, s, l, a))
+	}
+
+	SortByHSL(result, false, false, true)
+
+	return result
 }
 
 func (c Color) ToHSL() (float64, float64, float64) {
@@ -82,11 +165,6 @@ func FromHex(hex string) Color {
 	}
 }
 
-func parseHexByte(s string) uint8 {
-	i, _ := strconv.ParseUint(s, 16, 8)
-	return uint8(i)
-}
-
 func FromFloats(floatR, floatG, floatB, floatA float64) Color {
 	return Color{
 		R: uint8(clamp(floatR) * 255),
@@ -136,72 +214,4 @@ func FromImage(img image.Image, numColors int) []Color {
 	freq := countColors(img)
 	sorted := sortColorFrequencies(freq)
 	return filterDistinctColors(sorted, numColors)
-}
-
-func countColors(img image.Image) map[Color]int {
-	bounds := img.Bounds()
-	counts := make(map[Color]int)
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r, g, b, a := img.At(x, y).RGBA()
-			if a == 0 {
-				continue
-			}
-			c := Color{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
-			counts[c]++
-		}
-	}
-	return counts
-}
-
-func sortColorFrequencies(counts map[Color]int) []colorFreq {
-	var freq []colorFreq
-	for c, count := range counts {
-		freq = append(freq, colorFreq{c, count})
-	}
-	sort.Slice(freq, func(i, j int) bool {
-		return freq[i].count > freq[j].count
-	})
-	return freq
-}
-
-type colorFreq struct {
-	c     Color
-	count int
-}
-
-func filterDistinctColors(sortedColors []colorFreq, limit int) []Color {
-	var distinctColors []Color
-	if len(sortedColors) == 0 {
-		return distinctColors
-	}
-	distinctColors = append(distinctColors, sortedColors[0].c)
-	for _, item := range sortedColors[1:] {
-		if len(distinctColors) >= limit {
-			break
-		}
-		if isColorDistinct(item.c, distinctColors) {
-			distinctColors = append(distinctColors, item.c)
-		}
-	}
-	return distinctColors
-}
-
-func isColorDistinct(c Color, existing []Color) bool {
-	for _, e := range existing {
-		if ColorDistance(c, e) < 100 {
-			return false
-		}
-	}
-	return true
-}
-
-func clamp(v float64) float64 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
 }
