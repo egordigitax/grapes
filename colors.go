@@ -21,6 +21,15 @@ func (c Color) String() string {
 	return c.Hex()
 }
 
+func (c Color) ToFloats() [4]float64 {
+	return [4]float64{
+		float64(255 / c.R),
+		float64(255 / c.G),
+		float64(255 / c.B),
+		float64(255 / c.A),
+	}
+}
+
 func (c Color) ToHSL() (float64, float64, float64) {
 	r := float64(c.R) / 255
 	g := float64(c.G) / 255
