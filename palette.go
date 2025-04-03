@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-type palette struct {
-	colors []color
+type Palette struct {
+	colors []Color
 }
 
-func (p palette) String() string {
+func (p Palette) String() string {
 	var parts []string
 	for _, c := range p.colors {
 		parts = append(parts, fmt.Sprint(c))
@@ -19,13 +19,13 @@ func (p palette) String() string {
 	return "colors: " + strings.Join(parts, ", ")
 }
 
-func MakePalette(colors ...color) palette {
-	return palette{
+func MakePalette(colors ...Color) Palette {
+	return Palette{
 		colors: colors,
 	}
 }
 
-func (p *palette) SortByHSL(sortHue, sortSaturation, sortLightness bool) {
+func (p *Palette) SortByHSL(sortHue, sortSaturation, sortLightness bool) {
 	sort.Slice(p.colors, func(i, j int) bool {
 		h1, s1, l1 := p.colors[i].ToHSL()
 		h2, s2, l2 := p.colors[j].ToHSL()
@@ -43,8 +43,8 @@ func (p *palette) SortByHSL(sortHue, sortSaturation, sortLightness bool) {
 	})
 }
 
-func (p *palette) Analogues() palette {
-	var result []color
+func (p *Palette) Analogues() Palette {
+	var result []Color
 	result = append(result, p.colors...)
 
 	for _, c := range p.colors {
@@ -57,14 +57,14 @@ func (p *palette) Analogues() palette {
 		)
 	}
 
-	np := palette{colors: result}
+	np := Palette{colors: result}
 	np.SortByHSL(false, false, true)
 
 	return np
 }
 
-func (p *palette) Shades(n int, strength float64) palette {
-	var result []color
+func (p *Palette) Shades(n int, strength float64) Palette {
+	var result []Color
 
 	for _, c := range p.colors {
 		h, s, l0 := c.ToHSL()
@@ -87,14 +87,14 @@ func (p *palette) Shades(n int, strength float64) palette {
 		}
 	}
 	
-	np := palette{colors: result}
+	np := Palette{colors: result}
 	np.SortByHSL(false, false, true)
 
 	return np
 }
 
-func (p *palette) Complementary() palette {
-	var result []color
+func (p *Palette) Complementary() Palette {
+	var result []Color
 	result = append(result, p.colors...)
 
 	for _, c := range p.colors {
@@ -104,11 +104,11 @@ func (p *palette) Complementary() palette {
 			FromHSLf(hComp, s, l, float64(c.A)/255),
 		)
 	}
-	return palette{colors: result}
+	return Palette{colors: result}
 }
 
-func (p *palette) Triadic() palette {
-	var result []color
+func (p *Palette) Triadic() Palette {
+	var result []Color
 	result = append(result, p.colors...)
 
 	for _, c := range p.colors {
@@ -120,11 +120,11 @@ func (p *palette) Triadic() palette {
 			FromHSLf(h2, s, l, float64(c.A)/255),
 		)
 	}
-	return palette{colors: result}
+	return Palette{colors: result}
 }
 
-func (p *palette) Tetradic() palette {
-	var result []color
+func (p *Palette) Tetradic() Palette {
+	var result []Color
 	result = append(result, p.colors...)
 
 	for _, c := range p.colors {
@@ -138,11 +138,11 @@ func (p *palette) Tetradic() palette {
 			FromHSLf(h3, s, l, float64(c.A)/255),
 		)
 	}
-	return palette{colors: result}
+	return Palette{colors: result}
 }
 
-func (p *palette) AnalogousAccent() palette {
-	var result []color
+func (p *Palette) AnalogousAccent() Palette {
+	var result []Color
 	result = append(result, p.colors...)
 
 	for _, c := range p.colors {
@@ -156,5 +156,5 @@ func (p *palette) AnalogousAccent() palette {
 			FromHSLf(h2, s, l, float64(c.A)/255),
 		)
 	}
-	return palette{colors: result}
+	return Palette{colors: result}
 }

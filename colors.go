@@ -10,19 +10,19 @@ import (
 	"strings"
 )
 
-type color struct {
+type Color struct {
 	R, G, B, A uint8
 }
 
-func (c color) Hex() string {
+func (c Color) Hex() string {
 	return fmt.Sprintf("#%02X%02X%02X", c.R, c.G, c.B)
 }
 
-func (c color) String() string {
+func (c Color) String() string {
 	return c.Hex()
 }
 
-func (c color) ToHSL() (float64, float64, float64) {
+func (c Color) ToHSL() (float64, float64, float64) {
 	r := float64(c.R) / 255
 	g := float64(c.G) / 255
 	b := float64(c.B) / 255
@@ -58,15 +58,15 @@ func (c color) ToHSL() (float64, float64, float64) {
 	return h, s, l
 }
 
-func FromHex(hex string) color {
+func FromHex(hex string) Color {
 	hex = strings.TrimPrefix(hex, "#")
 	if len(hex) == 6 {
 		hex += "FF"
 	}
 	if len(hex) != 8 {
-		return color{}
+		return Color{}
 	}
-	return color{
+	return Color{
 		R: parseHexByte(hex[0:2]),
 		G: parseHexByte(hex[2:4]),
 		B: parseHexByte(hex[4:6]),
@@ -79,8 +79,8 @@ func parseHexByte(s string) uint8 {
 	return uint8(i)
 }
 
-func FromFloats(floatR, floatG, floatB, floatA float64) color {
-	return color{
+func FromFloats(floatR, floatG, floatB, floatA float64) Color {
+	return Color{
 		R: uint8(clamp(floatR) * 255),
 		G: uint8(clamp(floatG) * 255),
 		B: uint8(clamp(floatB) * 255),
@@ -88,7 +88,7 @@ func FromFloats(floatR, floatG, floatB, floatA float64) color {
 	}
 }
 
-func FromHSLf(h, s, l, a float64) color {
+func FromHSLf(h, s, l, a float64) Color {
 	h = math.Mod(h, 360)
 	c := (1 - math.Abs(2*l-1)) * s
 	x := c * (1 - math.Abs(math.Mod(h/60, 2)-1))
@@ -113,7 +113,7 @@ func FromHSLf(h, s, l, a float64) color {
 	return FromFloats(rf+m, gf+m, bf+m, a)
 }
 
-func ColorDistance(c1, c2 color) float64 {
+func ColorDistance(c1, c2 Color) float64 {
 	r1, g1, b1 := float64(c1.R), float64(c1.G), float64(c1.B)
 	r2, g2, b2 := float64(c2.R), float64(c2.G), float64(c2.B)
 	rMean := (r1 + r2) / 2
@@ -124,7 +124,7 @@ func ColorDistance(c1, c2 color) float64 {
 	)
 }
 
-func FromImage(img image.Image, numColors int) ([]color, error) {
+func FromImage(img image.Image, numColors int) ([]Color, error) {
 	if numColors <= 0 {
 		return nil, errors.New("numColors must be > 0")
 	}
@@ -134,23 +134,23 @@ func FromImage(img image.Image, numColors int) ([]color, error) {
 	return filterDistinctColors(sorted, numColors), nil
 }
 
-func countColors(img image.Image) map[color]int {
+func countColors(img image.Image) map[Color]int {
 	bounds := img.Bounds()
-	counts := make(map[color]int)
+	counts := make(map[Color]int)
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, a := img.At(x, y).RGBA()
 			if a == 0 {
 				continue
 			}
-			c := color{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
+			c := Color{uint8(r >> 8), uint8(g >> 8), uint8(b >> 8), uint8(a >> 8)}
 			counts[c]++
 		}
 	}
 	return counts
 }
 
-func sortColorFrequencies(counts map[color]int) []colorFreq {
+func sortColorFrequencies(counts map[Color]int) []colorFreq {
 	var freq []colorFreq
 	for c, count := range counts {
 		freq = append(freq, colorFreq{c, count})
@@ -162,12 +162,12 @@ func sortColorFrequencies(counts map[color]int) []colorFreq {
 }
 
 type colorFreq struct {
-	c     color
+	c     Color
 	count int
 }
 
-func filterDistinctColors(sortedColors []colorFreq, limit int) []color {
-	var distinctColors []color
+func filterDistinctColors(sortedColors []colorFreq, limit int) []Color {
+	var distinctColors []Color
 	if len(sortedColors) == 0 {
 		return distinctColors
 	}
@@ -183,7 +183,7 @@ func filterDistinctColors(sortedColors []colorFreq, limit int) []color {
 	return distinctColors
 }
 
-func isColorDistinct(c color, existing []color) bool {
+func isColorDistinct(c Color, existing []Color) bool {
 	for _, e := range existing {
 		if ColorDistance(c, e) < 100 {
 			return false
